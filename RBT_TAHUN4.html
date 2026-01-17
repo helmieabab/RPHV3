@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RBT T4 - RPH DIGITAL</title>
+    <style>
+        :root { --primary: #1e3799; --accent: #38ada9; --success: #27ae60; --danger: #e74c3c; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; margin: 0; color: #333; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .header { text-align: center; border-bottom: 3px solid var(--primary); padding-bottom: 15px; margin-bottom: 25px; }
+        .no-print { background: #f9f9f9; padding: 20px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 30px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        label { font-weight: bold; font-size: 13px; display: block; margin-bottom: 5px; color: var(--primary); }
+        select, input, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+        .sp-box { border: 1px solid #ddd; background: #fff; max-height: 200px; overflow-y: auto; border-radius: 8px; margin: 10px 0; padding: 5px; }
+        .sp-item { display: flex; align-items: flex-start; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
+        .sp-item:hover { background: #f0f7ff; }
+        .sp-item input { width: 18px; height: 18px; margin-right: 12px; cursor: pointer; flex-shrink: 0; }
+        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; font-size: 14px; }
+        .btn-ai { background: var(--accent); }
+        .btn-ref { background: #3c6382; }
+        .btn-save { background: var(--success); width: 100%; margin-top: 20px; font-size: 16px; }
+        .btn-clear { background: var(--danger); }
+        .btn-print { background: #000; }
+        .btn-hub { background: #7f8c8d; }
+        .btn:hover { opacity: 0.8; transform: translateY(-2px); }
+        .rph-table { width: 100%; border-collapse: collapse; margin-top: 30px; border: 2px solid #000; table-layout: fixed; background: #fff; }
+        .rph-table td { border: 1px solid #000; padding: 12px; vertical-align: top; font-size: 14px; word-wrap: break-word; line-height: 1.5; }
+        .label-cell { width: 160px; background: #f2f2f2; font-weight: bold; font-size: 12px; text-transform: uppercase; }
+        @media print { .no-print { display: none; } body { background: white; padding: 0; } .container { box-shadow: none; max-width: 100%; padding: 0; } .rph-table { page-break-inside: avoid; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2 style="margin:0;">RANCANGAN PENGAJARAN HARIAN</h2>
+        <p style="margin:5px 0;">REKA BENTUK & TEKNOLOGI T4 | MOHAMAD HELMIE BIN ABAB</p>
+    </div>
+
+    <div class="no-print">
+        <div class="grid-3">
+            <div><label>Tarikh</label><input type="date" id="tark" onchange="setHari()"></div>
+            <div><label>Hari</label><input type="text" id="hari" readonly placeholder="Auto-set"></div>
+            <div><label>Minggu</label><select id="mng"></select></div>
+        </div>
+        <div class="grid-2">
+            <div><label>Masa (Dari - Hingga)</label><input type="text" id="masa" placeholder="Contoh: 10:30 - 11:30"></div>
+            <div><label>Pilih Unit/SK</label><select id="sk" onchange="loadSP()"></select></div>
+        </div>
+
+        <label>Standard Pembelajaran (SP)</label>
+        <div id="sp-list" class="sp-box">Sila pilih unit...</div>
+
+        <div class="grid-2">
+            <div>
+                <button class="btn btn-ai" onclick="janaPdP()">✨ Jana Objektif & Aktiviti</button>
+                <textarea id="obj" rows="6"></textarea>
+            </div>
+            <div>
+                <button class="btn btn-ref" onclick="janaRefleksi()">💡 Jana Refleksi</button>
+                <textarea id="ref" rows="6"></textarea>
+            </div>
+        </div>
+
+        <button class="btn btn-save" onclick="tambahJadual()">➕ SIMPAN KE DALAM JADUAL</button>
+        
+        <div class="btn-group" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-top:20px;">
+            <button class="btn btn-print" onclick="window.print()">🖨️ CETAK / PDF</button>
+            <button class="btn btn-clear" onclick="kosongkanSemua()">🗑️ KOSONGKAN SEMUA</button>
+            <button class="btn btn-hub" onclick="location.href='INDEX.html'">🏠 HUB UTAMA</button>
+        </div>
+    </div>
+
+    <div id="output"></div>
+</div>
+
+<script>
+const dataSubjek = {
+    "1.0 Keselamatan Bengkel": ["1.1.1 Menyatakan simbol & tanda keselamatan.","1.1.2 Peraturan keselamatan diri, alatan & bahan.","1.1.3 Amalan kebersihan & keselamatan dlm bengkel.","1.1.4 Rawatan kecemasan & pemadam api."],
+    "2.0 Pengenalan Reka Bentuk": ["2.1.1 Maksud reka bentuk & kepentingan.","2.1.3 Elemen reka bentuk (garis, rupa, bentuk, warna).","2.2.1 Jenis-jenis garisan dlm lakaran.","2.2.2 Melakar pelbagai jenis garisan."],
+    "3.0 Pengenalan Teknologi": ["3.1.1 Maksud teknologi & kepentingan.","3.1.2 Teknologi konvensional & teknologi moden.","3.1.3 Menjana idea produk menggunakan teknologi."],
+    "4.0 Reka Bentuk Pembungkusan": ["4.1.1 Fungsi pembungkusan & ciri pembungkusan baik.","4.1.3 Melakar reka bentuk pembungkusan.","4.1.4 Menghasilkan pembungkusan kreatif."],
+    "5.0 Reka Bentuk Makanan": ["5.1.1 Maksud reka bentuk makanan.","5.1.2 Kepentingan reka bentuk makanan.","5.1.4 Melakar & menghasilkan reka bentuk makanan."],
+    "6.0 Pengaturcaraan": ["6.1.1 Maksud pengaturcaraan & algoritma.","6.2.1 Menggunakan pseudokod & carta alir.","6.3.1 Membina atur cara dlm Scratch."]
+};
+
+const mS = document.getElementById('mng'); for(let i=1; i<=42; i++) mS.innerHTML += `<option>Minggu ${i}</option>`;
+const skS = document.getElementById('sk'); skS.innerHTML = "<option value=''>-- Pilih Unit --</option>";
+Object.keys(dataSubjek).forEach(u => skS.innerHTML += `<option value="${u}">${u}</option>`);
+
+function setHari() { 
+    let d = new Date(document.getElementById('tark').value);
+    document.getElementById('hari').value = ['Ahad','Isnin','Selasa','Rabu','Khamis','Jumaat','Sabtu'][d.getDay()] || '';
+}
+
+function loadSP() {
+    let u = skS.value; let box = document.getElementById('sp-list'); box.innerHTML = "";
+    if(dataSubjek[u]) dataSubjek[u].forEach(p => {
+        box.innerHTML += `<label class="sp-item"><input type="checkbox" name="sp_c" value="${p}"><span>${p}</span></label>`;
+    });
+}
+
+function janaPdP() {
+    let sps = Array.from(document.querySelectorAll('input[name="sp_c"]:checked')).map(e => e.value);
+    if(sps.length == 0) return alert("Pilih SP!");
+    document.getElementById('obj').value = `OBJEKTIF:\nPada akhir PdP, murid dapat:\n${sps.map(s => "- " + s).join("\n")}\n\nAKTIVITI:\n1. Penerangan teori melalui slaid/buku teks.\n2. Tunjuk cara penggunaan alatan bengkel.\n3. Gerak kerja penghasilan projek/lakaran.\n4. Kemas bengkel & rumusan PdP.`;
+}
+
+function janaRefleksi() {
+    document.getElementById('ref').value = `___/___ murid menguasai kemahiran hari ini.\n\nPdP ditangguhkan kerana:\n( ) Cuti Peristiwa\n( ) Mesyuarat / Kursus\n( ) Program Sekolah`;
+}
+
+function tambahJadual() {
+    let sps = Array.from(document.querySelectorAll('input[name="sp_c"]:checked')).map(e => e.value);
+    if(!document.getElementById('tark').value || sps.length == 0) return alert("Lengkapkan data!");
+    let html = `
+    <table class="rph-table">
+        <tr><td class="label-cell">INFO PdP</td><td><b>MINGGU ${document.getElementById('mng').value.replace('Minggu ','')}</b> | ${document.getElementById('tark').value} | ${document.getElementById('hari').value}</td></tr>
+        <tr><td class="label-cell">MASA</td><td>${document.getElementById('masa').value}</td></tr>
+        <tr><td class="label-cell">TAJUK / SP</td><td><b>${skS.value}</b><br>${sps.join("<br>")}</td></tr>
+        <tr><td class="label-cell">AKTIVITI</td><td>${document.getElementById('obj').value.replace(/\n/g,"<br>")}</td></tr>
+        <tr><td class="label-cell" style="background:#f2f2f2">REFLEKSI</td><td>${document.getElementById('ref').value.replace(/\n/g,"<br>")}</td></tr>
+    </table><div style="page-break-after:always;"></div>`;
+    document.getElementById('output').innerHTML += html;
+    window.scrollTo(0, document.body.scrollHeight);
+}
+
+function kosongkanSemua() {
+    if(confirm("Padam semua jadual?")) document.getElementById('output').innerHTML = "";
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PK T5/T6 - RPH DIGITAL</title>
+    <style>
+        :root { --primary: #c0392b; --accent: #e74c3c; --success: #27ae60; --danger: #e74c3c; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; margin: 0; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .header { text-align: center; border-bottom: 3px solid var(--primary); padding-bottom: 15px; margin-bottom: 25px; }
+        .no-print { background: #fdedec; padding: 20px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 30px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        label { font-weight: bold; font-size: 13px; display: block; margin-bottom: 5px; color: var(--primary); }
+        select, input, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+        .sp-box { border: 1px solid #ddd; background: #fff; max-height: 200px; overflow-y: auto; border-radius: 8px; margin: 10px 0; padding: 5px; }
+        .sp-item { display: flex; align-items: flex-start; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .sp-item input { width: 18px; height: 18px; margin-right: 12px; flex-shrink: 0; }
+        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; font-size: 14px; }
+        .btn-ai { background: var(--accent); }
+        .btn-ref { background: #962d22; }
+        .btn-save { background: var(--success); width: 100%; margin-top: 20px; font-size: 16px; }
+        .btn-clear { background: var(--danger); }
+        .btn-print { background: #000; }
+        .btn-hub { background: #7f8c8d; }
+        .rph-table { width: 100%; border-collapse: collapse; margin-top: 30px; border: 2px solid #000; table-layout: fixed; background: #fff; }
+        .rph-table td { border: 1px solid #000; padding: 12px; vertical-align: top; font-size: 14px; word-wrap: break-word; }
+        .label-cell { width: 160px; background: #fadbd8; font-weight: bold; font-size: 12px; text-transform: uppercase; }
+        @media print { .no-print { display: none; } .container { box-shadow: none; max-width: 100%; padding: 0; } .rph-table { page-break-inside: avoid; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header"><h2>RANCANGAN PENGAJARAN HARIAN</h2><p>P.KESIHATAN T5/T6 | MOHAMAD HELMIE BIN ABAB</p></div>
+    <div class="no-print">
+        <div class="grid-3">
+            <div><label>Tarikh</label><input type="date" id="tark" onchange="setHari()"></div>
+            <div><label>Hari</label><input type="text" id="hari" readonly></div>
+            <div><label>Minggu</label><select id="mng"></select></div>
+        </div>
+        <div class="grid-2">
+            <div><label>Tahun</label><select id="thn" onchange="loadSK()"><option value="T5">Tahun 5</option><option value="T6">Tahun 6</option></select></div>
+            <div><label>Unit</label><select id="sk" onchange="loadSP()"></select></div>
+        </div>
+        <label>Standard Pembelajaran (SP)</label>
+        <div id="sp-list" class="sp-box">Pilih Tahun & Unit...</div>
+        <div class="grid-2">
+            <div><button class="btn btn-ai" onclick="janaPdP()">✨ Jana PdP</button><textarea id="obj" rows="6"></textarea></div>
+            <div><button class="btn btn-ref" onclick="janaRefleksi()">💡 Jana Refleksi</button><textarea id="ref" rows="6"></textarea></div>
+        </div>
+        <button class="btn btn-save" onclick="tambahJadual()">➕ SIMPAN KE DALAM JADUAL</button>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-top:20px;">
+            <button class="btn btn-print" onclick="window.print()">🖨️ CETAK</button>
+            <button class="btn btn-clear" onclick="kosongkanSemua()">🗑️ KOSONGKAN</button>
+            <button class="btn btn-hub" onclick="location.href='INDEX.html'">🏠 HUB</button>
+        </div>
+    </div>
+    <div id="output"></div>
+</div>
+<script>
+const dataPK = {
+    "T5": {
+        "Reproduktif": ["1.1.1 Sistem reproduktif lelaki/perempuan.","1.2.1 Menghargai perubahan fizikal.","1.2.2 Menjaga kebersihan diri."],
+        "Penyalahgunaan Bahan": ["2.1.1 Bahaya alkohol.","2.1.2 Cara mengelakkan alkohol."],
+        "Keselamatan": ["7.1.1 Kecederaan melecur & lepuh."]
+    },
+    "T6": {
+        "Reproduktif": ["1.1.1 Perubahan fizikal remaja.","1.2.1 Batas sentuhan seksual."],
+        "Bahan Inhalan": ["2.1.1 Maksud inhalan & contoh.","2.1.2 Kesan buruk inhalan."],
+        "Siber": ["7.1.1 Ancaman siber (Cyberbullying)."]
+    }
+};
+function loadSK() {
+    let t = document.getElementById('thn').value;
+    let skS = document.getElementById('sk'); skS.innerHTML = "<option value=''>-- Pilih Unit --</option>";
+    Object.keys(dataPK[t]).forEach(u => skS.innerHTML += `<option value="${u}">${u}</option>`);
+}
+function loadSP() {
+    let t = document.getElementById('thn').value; let u = document.getElementById('sk').value;
+    let box = document.getElementById('sp-list'); box.innerHTML = "";
+    if(dataPK[t][u]) dataPK[t][u].forEach(p => { box.innerHTML += `<label class="sp-item"><input type="checkbox" name="sp_c" value="${p}"><span>${p}</span></label>`; });
+}
+// Logik lain (setHari, janaPdP, janaRef, tambahJadual, kosongkan) sama seperti PJ T5 di atas
+</script>
+</body>
+</html>
