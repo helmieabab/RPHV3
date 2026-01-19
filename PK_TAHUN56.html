@@ -15,7 +15,7 @@
         label { font-weight: bold; font-size: 13px; display: block; margin-bottom: 5px; color: var(--primary); }
         select, input, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
         .sp-box { border: 1px solid #ddd; background: #fff; max-height: 200px; overflow-y: auto; border-radius: 8px; margin: 10px 0; padding: 5px; }
-        .sp-item { display: flex; align-items: flex-start; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .sp-item { display: flex; align-items: flex-start; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
         .sp-item input { width: 18px; height: 18px; margin-right: 12px; flex-shrink: 0; }
         .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; font-size: 14px; }
         .btn-ai { background: var(--accent); }
@@ -39,9 +39,10 @@
             <div><label>Hari</label><input type="text" id="hari" readonly placeholder="Auto"></div>
             <div><label>Minggu</label><select id="mng"></select></div>
         </div>
-        <div class="grid-2">
-            <div><label>Pilih Tahun</label><select id="thn" onchange="loadSK()"><option value="">-- Pilih Tahun --</option><option value="T5">Tahun 5</option><option value="T6">Tahun 6</option></select></div>
-            <div><label>Pilih Unit</label><select id="sk" onchange="loadSP()"></select></div>
+        <div class="grid-3">
+            <div><label>Tahun</label><select id="thn" onchange="loadSK()"><option value="">-- Pilih --</option><option value="T5">Tahun 5</option><option value="T6">Tahun 6</option></select></div>
+            <div><label>Masa</label><input type="text" id="masa" placeholder="Contoh: 08:00 - 08:30"></div>
+            <div><label>Unit</label><select id="sk" onchange="loadSP()"></select></div>
         </div>
         <label>Standard Pembelajaran (SP)</label>
         <div id="sp-list" class="sp-box">Sila pilih Tahun & Unit...</div>
@@ -51,7 +52,7 @@
         </div>
         <button class="btn btn-save" onclick="tambahJadual()">➕ SIMPAN KE DALAM JADUAL</button>
         <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-top:20px;">
-            <button class="btn btn-print" onclick="window.print()">🖨️ CETAK</button>
+            <button class="btn btn-print" onclick="window.print()">🖨️ CETAK / PDF</button>
             <button class="btn btn-clear" onclick="kosongkanSemua()">🗑️ KOSONGKAN</button>
             <button class="btn btn-hub" onclick="location.href='index.html'">🏠 HUB</button>
         </div>
@@ -63,7 +64,7 @@
 const dataPK = {
     "T5": {
         "1.0 Kesihatan Diri & Reproduktif": ["1.1.1 Menyatakan sistem reproduktif lelaki & perempuan.","1.1.2 Menjelaskan fungsi organ reproduktif.","1.2.1 Menghargai perubahan fizikal diri.","1.2.3 Mengamalkan kebersihan diri."],
-        "2.0 Penyalahgunaan Bahan": ["2.1.1 Memahami kesan jangka pendek alkohol.","2.1.2 Memahami kesan jangka panjang alkohol.","2.1.3 Mengaplikasikan cara mengelak minuman beralkohol."],
+        "2.0 Penyalahgunaan Bahan": ["2.1.1 Memahami kesan jangka pendek alkohol.","2.1.2 Memahami kesan jangka panjang alkohol.","2.1.3 Cara mengelak minuman beralkohol."],
         "3.0 Pengurusan Mental & Emosi": ["3.1.1 Mengenalpasti situasi konflik dalam keluarga.","3.1.2 Menjelaskan cara mengatasi konflik."]
     },
     "T6": {
@@ -103,32 +104,39 @@ function loadSP() {
 
 function janaPdP() {
     let sps = Array.from(document.querySelectorAll('input[name="sp_c"]:checked')).map(e => e.value);
-    if(sps.length == 0) return alert("Pilih SP!");
-    document.getElementById('obj').value = `OBJEKTIF:\nPada akhir PdP, murid dapat:\n${sps.map(s => "- " + s).join("\n")}\n\nAKTIVITI:\n1. Sesi sumbang saran / Tayangan video.\n2. Perbincangan kumpulan tentang tajuk.\n3. Penghasilan nota kreatif / peta minda.\n4. Rumusan pengajaran.`;
+    if(sps.length == 0) return alert("Sila pilih sekurang-kurangnya satu SP!");
+    document.getElementById('obj').value = `OBJEKTIF:\nPada akhir PdP, murid dapat:\n${sps.map(s => "- " + s).join("\n")}\n\nAKTIVITI:\n1. Set Induksi: Sumbang saran tajuk.\n2. Penerangan menggunakan slaid / buku teks.\n3. Perbincangan kumpulan & pembentangan.\n4. Rumusan & Kerja rumah.`;
 }
 
 function janaRefleksi() {
-    document.getElementById('ref').value = `___/___ murid menguasai objektif pembelajaran.\n\nPdP ditangguhkan kerana:\n( ) Cuti Peristiwa\n( ) Mesyuarat / Kursus\n( ) Program Sekolah`;
+    document.getElementById('ref').value = `___/___ murid menguasai objektif hari ini.\n\nPdP ditangguhkan kerana:\n( ) Cuti Peristiwa\n( ) Mesyuarat / Kursus\n( ) Program Sekolah`;
 }
 
 function tambahJadual() {
+    let tark = document.getElementById('tark').value;
     let sps = Array.from(document.querySelectorAll('input[name="sp_c"]:checked')).map(e => e.value);
-    if(!document.getElementById('tark').value || sps.length == 0) return alert("Lengkapkan Tarikh dan SP!");
+    
+    if(!tark || sps.length == 0) {
+        alert("Sila isi Tarikh dan pilih SP dahulu!");
+        return;
+    }
+
     let html = `
     <table class="rph-table">
-        <tr><td class="label-cell">INFO PdP</td><td><b>MG ${document.getElementById('mng').value.replace('Minggu ','')}</b> | ${document.getElementById('tark').value} | ${document.getElementById('hari').value}</td></tr>
+        <tr><td class="label-cell">INFO PdP</td><td><b>MG ${document.getElementById('mng').value.replace('Minggu ','')}</b> | ${tark} | ${document.getElementById('hari').value}</td></tr>
         <tr><td class="label-cell">TAHUN / MASA</td><td>${document.getElementById('thn').value} | ${document.getElementById('masa').value || '-'}</td></tr>
         <tr><td class="label-cell">UNIT / SP</td><td><b>${document.getElementById('sk').value}</b><br>${sps.join("<br>")}</td></tr>
         <tr><td class="label-cell">AKTIVITI</td><td>${document.getElementById('obj').value.replace(/\n/g,"<br>")}</td></tr>
         <tr><td class="label-cell">REFLEKSI</td><td>${document.getElementById('ref').value.replace(/\n/g,"<br>")}</td></tr>
     </table><div style="page-break-after:always;"></div>`;
+    
     document.getElementById('output').innerHTML += html;
+    window.scrollTo(0, document.body.scrollHeight);
 }
 
 function kosongkanSemua() {
-    if(confirm("Padam semua jadual?")) document.getElementById('output').innerHTML = "";
+    if(confirm("Padam semua jadual di bawah?")) document.getElementById('output').innerHTML = "";
 }
 </script>
 </body>
 </html>
-
